@@ -1,8 +1,14 @@
 [
 {
  "type": "sphere",
- "color": [1, 0, 0],
- "radius": 1.0,
+ "color": [1.0, 0, 0],
+ "radius": 0.5,
  "position": [0, 0, 20.0]
- }
+ },
+ {
+  "type": "sphere",
+  "color": [1.0, 0, 0],
+  "radius": 1,
+  "position": [0, 0, 10.0]
+  }
 ]

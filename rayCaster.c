@@ -1,9 +1,8 @@
 /*
 Created by Zowie Haugaard
-9/16/16
-PPM Converter
-  This program is used to convert between the ascii and binary versions of the
-  .ppm image file format.
+10/4/16
+Ray Caster
+  This Ray caster creates a .ppm image from a .json style list of objects
  */
 
  #include <stdio.h>
@@ -12,7 +11,10 @@ PPM Converter
  #include <ctype.h>
  #include <math.h>
 
+//keeps track of the current line in the json file
  int line = 1;
+
+//#define DEBUG
 
  // next_c() wraps the getc() function and provides error checking and line
  // number maintenance
@@ -109,6 +111,7 @@ PPM Converter
    return v;
  }
 
+ //A struct to represent our dfferent object types, camera sphere and plane
  typedef struct {
    int kind; // 0 = camera, 1 = sphere, 2 = plane
    union {
@@ -129,11 +132,27 @@ PPM Converter
    };
  } Object;
 
+
+ //represents a single pixel object
+ typedef struct RGB {
+   unsigned char r, g, b;
+ }RGBPix;
+
+ //this struct is used to store the entire image data, along with the width and height
+ typedef struct Image {
+   int width, height;
+   RGBPix *data;
+ }PPMImage;
+
+ //read in the json info and return an array of objects
  Object** read_scene(char* filename) {
+   //c for character, i for index
    int c, i = 0;
+   //open the file
    FILE* json = fopen(filename, "r");
-   Object** objects;
-   objects = malloc(sizeof(Object*)*2);
+
+   //create a new array of objects
+   Object** objects = malloc(sizeof(Object*)*2);
 
    if (json == NULL) {
      fprintf(stderr, "Error: Could not open file \"%s\"\n", filename);
@@ -297,9 +316,12 @@ PPM Converter
        c = next_c(json);
        if (c == ',') {
  	// noop
+  objects = realloc(objects, sizeof(Object)*(i+2));
+  printf("next\n" );
  	skip_ws(json);
        } else if (c == ']') {
  	fclose(json);
+  objects[i] = 0;
  	return objects;
        } else {
  	fprintf(stderr, "Error: Expecting ',' or ']' on line %d.\n", line);
@@ -322,6 +344,62 @@ PPM Converter
    v[1] /= len;
    v[2] /= len;
  }
+
+ //double plane_intersection(double* Ro, double* Rd,
+      //     double* P, double n){
+             // Step 1. Find the equation for the object you are
+             // interested in..  (e.g., sphere)
+             //
+             // ax + by + cz = d
+             //
+             // Step 2. Parameterize the equation with a center point
+             // if needed
+             //
+             // nx(x-Px) + ny(y-Py) + nz(z-Pz) = 0
+             //
+             // Step 3. Substitute the eq for a ray into our object
+             // equation.
+             //
+             // nx(Rox + t*Rdx - Px) + ny(Roy + t*Rdy - Py) + nz(Roz + t*Rdz - Pz) = 0
+             //
+             // Step 4. Solve for t.
+             //
+             // Step 4a. Rewrite the equation (flatten).
+             //
+
+
+             //nx * Rox + nx * t*Rdx - nx * Px +
+             //ny * Roy + ny * t*Rdy - ny * Py +
+             //nz * Roz + nz * t*
+
+             // -r^2 +
+             // t^2 * Rdx^2 +
+             // t^2 * Rdy^2 +
+             // t^2 * Rdz^2 +
+             // 2*t * Rox * Rdx -
+             // 2*t * Rdx * Cx +
+             // 2*t * Roy * Rdy -
+             // 2*t * Rdy * Cy +
+             // 2*t * Roz * Rdz -
+             // 2*t * Rdz * Cz +
+             // Rox^2 -
+             // 2*Rox*Cx +
+             // Cx^2 +
+             // Roy^2 -
+             // 2*Roy*Cy +
+             // Cy^2 +
+             // Roz^2 -
+             // 2*Roz*Cz +
+             // Cz^2 = 0
+             //
+             // Steb 4b. Rewrite the equation in terms of t.
+             //
+             // t^2 * (Rdx^2 + rdy^2 + Rdz^2) +
+             // t * (2 * (Rox * Rdx - Rdx * Cx + Roy * Rdy - Rdy * Cy + Roz * Rdz - Rdz * Cz)) +
+             // Rox^2 - 2*Rox*Cx + Cx^2 + Roy^2 - 2*Roy*Cy + Cy^2 + Roz^2 - 2*Roz*Cz + Cz^2 - r^2 = 0
+             //
+             // Use the quadratic equation to solve for t..
+           //}
 
  double sphere_intersection(double* Ro, double* Rd,
  			     double* C, double r) {
@@ -451,21 +529,47 @@ PPM Converter
    return -1;
  }
 
- int main() {
+ typedef struct Colisions {
+   double t;
+   double color[3];
+ }Colision;
+
+ int main(int argc, char *argv[]) {
 
    Object** objects = read_scene("objects.json");
 
-   printf("type: %d\n radius: %f\n position: %f %f %f", objects[0]->kind, objects[0]->sphere.radius,objects[0]->sphere.position[0], objects[0]->sphere.position[1], objects[0]->sphere.position[2]);
+   printf("type: %d\n radius: %f\n position: %f %f %f\n", objects[1]->kind, objects[1]->sphere.radius,objects[1]->sphere.position[0], objects[1]->sphere.position[1], objects[1]->sphere.position[2]);
 
-   objects[1] = NULL;
+   //Make sure the right number of arguments was supplied
+   if(argc < 5 || argc > 5) {
+     perror("usage: conversion-number in-file.ppm out-file.ppm \n");
+   }
+
+   FILE *outFile = fopen(argv[3], "wb");
+
+
+
+
+   int curpix = 0;
+  double *curcolor;
+
+
+   double *backcolor = malloc(sizeof(char)*3);
+   backcolor[0] = 0.33;
+   backcolor[1] = 0.33;
+   backcolor[2] = 0.33;
+
+
 
    double cx = 0;
    double cy = 0;
-   double h = 0.2;
-   double w = 0.2;
+   double h = 0.5;
+   double w = 0.5;
 
-   int M = 30;
-   int N = 30;
+   int M = 300;
+   int N = 300;
+
+   (void) fprintf(outFile, "P6\n%d %d\n255\n", N, M);
 
    double pixheight = h / M;
    double pixwidth = w / N;
@@ -482,30 +586,34 @@ PPM Converter
 
        double best_t = INFINITY;
        for (int i=0; objects[i] != 0; i += 1) {
- 	double t = 0;
+ 	       double t = 0;
+         //printf("type: %d\n radius: %f\n position: %f %f %f\n", objects[i]->kind, objects[i]->sphere.radius,objects[i]->sphere.position[0], objects[i]->sphere.position[1], objects[i]->sphere.position[2]);
 
  	switch(objects[i]->kind) {
  	case 1:
  	  t = sphere_intersection(Ro, Rd,
  				    objects[i]->sphere.position,
  				    objects[i]->sphere.radius);
+    if(t > 0 && t < best_t) curcolor = objects[i]->sphere.color;
  	  break;
  	default:
  	  // Horrible error
     printf("err\n" );
  	  exit(1);
  	}
+
  	if (t > 0 && t < best_t) best_t = t;
        }
        if (best_t > 0 && best_t != INFINITY) {
- 	printf("#");
+         fwrite(curcolor, 1, 3, outFile);
        } else {
- 	printf(".");
+         fwrite(backcolor, 1, 3, outFile);
        }
 
      }
-     printf("\n");
+
    }
+   (void) fclose(outFile);
 
    return 0;
  }

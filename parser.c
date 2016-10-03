@@ -5,6 +5,7 @@
 #include "parser.h"
 
 int line = 1;
+int size = 0;
 
 // next_c() wraps the getc() function and provides error checking and line
 // number maintenance
@@ -88,6 +89,7 @@ char* next_string(FILE* json) {
   return strdup(buffer);
 }
 
+//Get the next numerical value from the file
 double next_number(FILE* json) {
   float value;
   fscanf(json, "%f", &value);
@@ -95,24 +97,36 @@ double next_number(FILE* json) {
   return value;
 }
 
+//use our other methods to help return a double vector
 double* next_vector(FILE* json) {
+  //allocate the memory
   double* v = malloc(3*sizeof(double));
+  //look for the begining of the vector
   expect_c(json, '[');
   skip_ws(json);
+  //put the first number in
   v[0] = next_number(json);
   skip_ws(json);
+  //expect a comma after each value
   expect_c(json, ',');
   skip_ws(json);
+  //get the second value
   v[1] = next_number(json);
   skip_ws(json);
   expect_c(json, ',');
   skip_ws(json);
+  //get the third value
   v[2] = next_number(json);
   skip_ws(json);
+  //look for the end of the vector
   expect_c(json, ']');
   return v;
 }
 
+
+int getSize(){
+  return size;
+}
 
 
 //read in the json info and return an array of objects
@@ -125,6 +139,7 @@ Object** read_scene(char* filename) {
   //create a new array of objects
   Object** objects = malloc(sizeof(Object*)*2);
 
+  //error if file un openable
   if (json == NULL) {
     fprintf(stderr, "Error: Could not open file \"%s\"\n", filename);
     exit(1);
@@ -138,24 +153,28 @@ Object** read_scene(char* filename) {
   skip_ws(json);
 
   // Find the objects
-
   while (1) {
     c = fgetc(json);
+    //error if empty list or unexpected end of scene
     if (c == ']') {
-      fprintf(stderr, "Error: This is the worst scene file EVER.\n");
+      fprintf(stderr, "Error: Unexpected end of scene file.\n");
       fclose(json);
       return objects;
     }
-    if (c == '{') {
-      skip_ws(json);
-      i += 1;
-      objects[i-1] = malloc(sizeof(Object));
 
-      // Parse the object
+    //beginning of an object
+    if (c == '{') {
+
+      size += 1;
+      skip_ws(json);
+      //allocate space for the object
+      objects[i] = malloc(sizeof(Object));
+
+      // Parse the object type
       char* key = next_string(json);
       if (strcmp(key, "type") != 0) {
- fprintf(stderr, "Error: Expected \"type\" key on line number %d.\n", line);
- exit(1);
+        fprintf(stderr, "Error: Expected \"type\" key on line number %d.\n", line);
+        exit(1);
       }
 
       skip_ws(json);
@@ -165,139 +184,151 @@ Object** read_scene(char* filename) {
       skip_ws(json);
 
       char* value = next_string(json);
+      printf("%s\n", value);
 
       if (strcmp(value, "camera") == 0) {
-        objects[i-1]->kind = 0;
-      } else if (strcmp(value, "sphere") == 0) {
-        objects[i-1]->kind = 1;
-      } else if (strcmp(value, "plane") == 0) {
-        objects[i-1]->kind = 2;
-      } else {
- fprintf(stderr, "Error: Unknown type, \"%s\", on line number %d.\n", value, line);
- exit(1);
+        objects[i]->kind = 0;
+
+      }
+      else if (strcmp(value, "sphere") == 0) {
+        objects[i]->kind = 1;
+        printf("parsed type\n" );
+      }
+      else if (strcmp(value, "plane") == 0) {
+        objects[i]->kind = 2;
+        printf("parsed type\n");
+      }
+       else {
+         fprintf(stderr, "Error: Unknown type, \"%s\", on line number %d.\n", value, line);
+         exit(1);
       }
 
       skip_ws(json);
 
       while (1) {
- // , }
- c = next_c(json);
- if (c == '}') {
-   // stop parsing this object
-   break;
- } else if (c == ',') {
-   // read another field
-   skip_ws(json);
-   char* key = next_string(json);
-   printf("%s\n", key );
-   skip_ws(json);
-   expect_c(json, ':');
-   skip_ws(json);
-    if (strcmp(key, "width") == 0){
-      if(objects[i-1]->kind != 0) {
-        fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
-        exit(1);
-      }
-        objects[i-1]->camera.width =next_number(json);
-    }
 
-    else if(strcmp(key, "height") == 0){
-      if(objects[i-1]->kind != 0) {
-        fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
-        exit(1);
-      }
-        objects[i-1]->camera.height =next_number(json);
-    }
+        c = next_c(json);
+        if (c == '}') {
+          // stop parsing this object
+          break;
+        }
+         else if (c == ',') {
+           // read another field
+           skip_ws(json);
+           char* key = next_string(json);
+           printf("%s\n", key );
+           skip_ws(json);
+           expect_c(json, ':');
+           skip_ws(json);
+           if (strcmp(key, "width") == 0){
+             if(objects[i]->kind != 0) {
+                fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
+                exit(1);
+              }
+                objects[i]->camera.width =next_number(json);
+            }
 
-    else if(strcmp(key, "radius") == 0){
-      if(objects[i-1]->kind != 1) {
-        fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
-        exit(1);
-      }
-      else{
-        objects[i-1]->sphere.radius = next_number(json);
-      }
-    }
+            else if(strcmp(key, "height") == 0){
+              if(objects[i]->kind != 0) {
+                fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
+                exit(1);
+              }
+                objects[i]->camera.height =next_number(json);
+            }
 
-    else if(strcmp(key, "color") == 0){
-      if(objects[i-1]->kind == 0) {
-        fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
-        exit(1);
-      }
-      double* val = next_vector(json);
-        if(objects[i-1]->kind == 1) {
-          objects[i-1]->sphere.color[0] = val[0];
-          objects[i-1]->sphere.color[1] = val[1];
-          objects[i-1]->sphere.color[2] = val[2];
+            else if(strcmp(key, "radius") == 0){
+              if(objects[i]->kind != 1) {
+                fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
+                exit(1);
+              }
+              else{
+                objects[i]->sphere.radius = next_number(json);
+              }
+            }
 
-          printf("%f\n", objects[i-1]->sphere.color[0] );
+            else if(strcmp(key, "color") == 0){
+              if(objects[i]->kind == 0) {
+                fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
+                exit(1);
+              }
+              double* val = next_vector(json);
+              if(objects[i]->kind == 1) {
+                objects[i]->sphere.color[0] = val[0];
+                objects[i]->sphere.color[1] = val[1];
+                objects[i]->sphere.color[2] = val[2];
+
+                printf("%f\n", objects[i]->sphere.color[0] );
+              }
+              else {
+                objects[i]->plane.color[0] = val[0];
+                objects[i]->plane.color[1] = val[1];
+                objects[i]->plane.color[2] = val[2];
+              }
+            }
+
+            else if(strcmp(key, "position") == 0) {
+              if(objects[i]->kind == 0) {
+                fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
+                exit(1);
+              }
+              double* value = next_vector(json);
+              printf("%f\n",value[2] );
+              if(objects[i]->kind == 1) {
+                objects[i]->sphere.position[0] = value[0];
+                objects[i]->sphere.position[1] = value[1];
+                objects[i]->sphere.position[2] = value[2];
+                printf("pos3 %f\n", objects[i]->sphere.position[2]);
+              }
+              else {
+                objects[i]->plane.position[0] = value[0];
+                objects[i]->plane.position[1] = value[1];
+                objects[i]->plane.position[2] = value[2];
+                fprintf(stderr, "parsed pos\n" );
+              }
+
+            }
+
+            else if(strcmp(key, "normal") == 0){
+              double* value = next_vector(json);
+                objects[i]->plane.normal[0] = value[0];
+                objects[i]->plane.normal[1] = value[1];
+                objects[i]->plane.normal[2] = value[2];
+                printf("parsed normal\n");
+
+            }
+            else {
+              fprintf(stderr, "Error: Unknown property, \"%s\", on line %d.\n",key, line);
+            }
+            skip_ws(json);
+          }
+          else {
+            fprintf(stderr, "Error: Unexpected value on line %d\n", line);
+            exit(1);
+          }
+        }
+        skip_ws(json);
+        c = next_c(json);
+        if (c == ',') {
+          objects = realloc(objects, sizeof(*objects)*(i+2));
+          printf("next\n" );
+          skip_ws(json);
+          i += 1;
+        }
+        else if (c == ']') {
+          fclose(json);
+
+          return objects;
         }
         else {
-          objects[i-1]->plane.color[0] = val[0];
-          objects[i-1]->plane.color[1] = val[1];
-          objects[i-1]->plane.color[2] = val[2];
+          fprintf(stderr, "Error: Expecting ',' or ']' on line %d.\n", line);
+          exit(1);
         }
-
-    }
-
-    else if(strcmp(key, "position") == 0) {
-      if(objects[i-1]->kind == 0) {
-        fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
-        exit(1);
-      }
-      double* value = next_vector(json);
-      printf("%f\n",value[2] );
-        if(objects[i-1]->kind == 1) {
-          objects[i-1]->sphere.position[0] = value[0];
-          objects[i-1]->sphere.position[1] = value[1];
-          objects[i-1]->sphere.position[2] = value[2];
-          printf("pos3 %f\n", objects[i-1]->sphere.position[2]);
-        }
-        else {
-          objects[i-1]->plane.position[0] = value[0];
-          objects[i-1]->plane.position[1] = value[1];
-          objects[i-1]->plane.position[2] = value[2];
-        }
-
-    }
-
-    else if(strcmp(key, "normal") == 0){
-      if(objects[i-1]->kind != 2) {
-        fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
-        exit(1);
-      }
-      double* value = next_vector(json);
-        objects[i-1]->plane.normal[0] = value[0];
-        objects[i-1]->plane.normal[1] = value[1];
-        objects[i-1]->plane.normal[2] = value[2];
-
-    }
- else {
-     fprintf(stderr, "Error: Unknown property, \"%s\", on line %d.\n",
-       key, line);
-     //char* value = next_string(json);
-   }
-   skip_ws(json);
- } else {
-   fprintf(stderr, "Error: Unexpected value on line %d\n", line);
-   exit(1);
- }
-      }
-      skip_ws(json);
-      c = next_c(json);
-      if (c == ',') {
- // noop
- objects = realloc(objects, sizeof(Object)*(i+2));
- printf("next\n" );
- skip_ws(json);
-      } else if (c == ']') {
- fclose(json);
- objects[i] = 0;
- return objects;
-      } else {
- fprintf(stderr, "Error: Expecting ',' or ']' on line %d.\n", line);
- exit(1);
       }
     }
   }
-}
+  //
+  // int main() {
+  //   Object** objects = read_scene("objects.json");
+  //
+  //   return 0;
+  // }

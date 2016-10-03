@@ -21,6 +21,7 @@ typedef struct {
   };
 } Object;
 
+int getSize();
 int next_c(FILE* json);
 void expect_c(FILE* json, int d);
 void skip_ws(FILE* json);

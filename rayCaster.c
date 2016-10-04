@@ -87,17 +87,30 @@ static inline double* sub(double* v1, double* v2){
 
  int main(int argc, char *argv[]) {
 
-   Object** objects = read_scene("objects.json");
-   printf("%d\n", getSize());
-   objects[getSize()] = NULL;
-
    //Make sure the right number of arguments was supplied
    if(argc < 5 || argc > 5) {
      perror("usage: ./cast width height object-file.json output-file.ppm \n");
      exit(1);
    }
 
-   FILE *outFile = fopen(argv[3], "wb");
+   char* inFile = argv[3];
+   if(strstr(inFile, ".json") == NULL){
+     printf("Please provide a valid json file\n");
+     exit(1);
+   }
+
+   Object** objects = read_scene(inFile);
+   printf("%d\n", getSize());
+   objects[getSize()] = NULL;
+
+
+   char* outName = argv[4];
+   if(strstr(outName, ".ppm") == NULL){
+     printf("Please provide a valid ppm file name to write to\n");
+     exit(1);
+   }
+
+   FILE *outFile = fopen(outName, "wb");
 
    double *curcolor;
 
@@ -135,9 +148,7 @@ static inline double* sub(double* v1, double* v2){
         }
       }
    }
-   if(isnan(h) || isnan(w)){
-     printf("Error: Please provide a valid camera object\n");
-   }
+
 
    printf("%f %f\n",w, h);
 

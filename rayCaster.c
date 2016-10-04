@@ -208,12 +208,17 @@ static inline double dot(double* v1, double* v2){
 
    FILE *outFile = fopen(argv[3], "wb");
 
-  double *curcolor;
+   double *curcolor;
 
-  int width = argv[1];
-  int height = (int) argv[2];
-  printf("%d\n", width);
+   int width = 300;
+   int height = 300;
+   printf("%d\n", width);
 
+   PPMImage image;
+   image.width = width;
+   image.height = height;
+
+   image.data = malloc(sizeof(RGBPix)* width * height);
 
    static unsigned char backcolor[3];
    backcolor[0] = 85;
@@ -227,8 +232,8 @@ static inline double dot(double* v1, double* v2){
    double h = 1;
    double w = 1;
 
-   int M = 100;
-   int N = 100;
+   int M = height;
+   int N = width;
 
    (void) fprintf(outFile, "P6\n%d %d\n255\n", N, M);
 
@@ -266,7 +271,9 @@ static inline double dot(double* v1, double* v2){
 
  	if (t > 0 && t < best_t) {
     best_t = t;
-    curcolor = objects[i]->sphere.color;
+    if(objects[i]-> kind == 1) curcolor = objects[i]->sphere.color;
+    else if(objects[i]-> kind == 2) curcolor = objects[i]->plane.color;
+    else printf("Error: unknown primative type\n");
   }
        }
        static unsigned char outcolor[3];
@@ -274,14 +281,19 @@ static inline double dot(double* v1, double* v2){
        outcolor[1] = (char) (255 * curcolor[1]);
        outcolor[2] = (char) (255 * curcolor[2]);
        if (best_t > 0 && best_t != INFINITY) {
-         fwrite(outcolor, 1, 3, outFile);
-       } else {
-         fwrite(backcolor, 1, 3, outFile);
+         image.data[y * width + x].r = outcolor[0];
+         image.data[y * width + x].g = outcolor[1];
+         image.data[y * width + x].b = outcolor[2];
        }
-
+       else {
+         image.data[y * width + x].r = backcolor[0];
+         image.data[y * width + x].g = backcolor[1];
+         image.data[y * width + x].b = backcolor[2];
+       }
      }
 
    }
+   fwrite(image.data, 3 * image.width, image.height, outFile);
    (void) fclose(outFile);
 
    return 0;

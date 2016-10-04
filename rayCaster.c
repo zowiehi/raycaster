@@ -45,7 +45,7 @@ static inline double dot(double* v1, double* v2){
           double* P, double* n){
             double a, b;
 
-            a = dot(n, sub(Ro, P));
+            a = dot(n, sub(P, Ro));
             b = dot(n, Rd);
 
             return a/b;
@@ -250,8 +250,8 @@ static inline double dot(double* v1, double* v2){
 
    double pixheight = h / height;
    double pixwidth = w / width;
-   for (int y = 0; y < height; y += 1) {
-     for (int x = 0; x < width; x += 1) {
+   for (int y = 0; y <= height; y += 1) {
+     for (int x = 0; x <= width; x += 1) {
        double Ro[3] = {0, 0, 0};
        double Rd[3] = {
  	       cx - (w/2) + pixwidth * (x + 0.5),
@@ -261,9 +261,9 @@ static inline double dot(double* v1, double* v2){
       (void) normalize(Rd);
 
        double best_t = INFINITY;
+       //check for collisions with each of our objects
        for (int i=0; objects[i] != NULL; i += 1) {
  	       double t = 0;
-
 
  	       switch (objects[i]->kind) {
            case 0:
@@ -291,14 +291,14 @@ static inline double dot(double* v1, double* v2){
        outcolor[1] = (char) (255 * curcolor[1]);
        outcolor[2] = (char) (255 * curcolor[2]);
        if (best_t > 0 && best_t != INFINITY) {
-         image.data[y * width + x].r = outcolor[0];
-         image.data[y * width + x].g = outcolor[1];
-         image.data[y * width + x].b = outcolor[2];
+         image.data[(height - y) * width + x].r = outcolor[0];
+         image.data[(height - y) * width + x].g = outcolor[1];
+         image.data[(height - y) * width + x].b = outcolor[2];
        }
        else {
-         image.data[y * width + x].r = backcolor[0];
-         image.data[y * width + x].g = backcolor[1];
-         image.data[y * width + x].b = backcolor[2];
+         image.data[(height - y) * width + x].r = backcolor[0];
+         image.data[(height - y) * width + x].g = backcolor[1];
+         image.data[(height - y) * width + x].b = backcolor[2];
        }
      }
 

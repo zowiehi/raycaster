@@ -128,7 +128,6 @@ int getSize(){
   return size;
 }
 
-
 //read in the json info and return an array of objects
 Object** read_scene(char* filename) {
   //c for character, i for index
@@ -154,6 +153,7 @@ Object** read_scene(char* filename) {
 
   // Find the objects
   while (1) {
+
     c = fgetc(json);
     //error if empty list or unexpected end of scene
     if (c == ']') {
@@ -164,6 +164,8 @@ Object** read_scene(char* filename) {
 
     //beginning of an object
     if (c == '{') {
+
+
 
       size += 1;
       skip_ws(json);
@@ -205,11 +207,34 @@ Object** read_scene(char* filename) {
 
       skip_ws(json);
 
+      int col = 0, p = 0, r = 0, n = 0, w = 0, h = 0;
+
       while (1) {
+
+
 
         c = next_c(json);
         if (c == '}') {
-          // stop parsing this object
+          switch (objects[i]->kind) {
+            case 0:
+              if(w == 0 || h == 0){
+                fprintf(stderr, "Error: please provide a valid camera object\n" );
+                exit(1);
+              }
+              break;
+            case 1:
+              if(p == 0 || col == 0 || r == 0){
+                fprintf(stderr, "Error: please provide a valid sphere object\n" );
+                exit(1);
+              }
+              break;
+            case 2:
+              if(p == 0 || col == 0 || n == 0){
+                fprintf(stderr, "Error: please provide a valid plane object\n" );
+                exit(1);
+              }
+              break;
+          }
           break;
         }
          else if (c == ',') {
@@ -225,6 +250,7 @@ Object** read_scene(char* filename) {
                 fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
                 exit(1);
               }
+              w = 1;
                 objects[i]->camera.width =next_number(json);
             }
 
@@ -233,6 +259,7 @@ Object** read_scene(char* filename) {
                 fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
                 exit(1);
               }
+              h = 1;
                 objects[i]->camera.height =next_number(json);
             }
 
@@ -241,9 +268,9 @@ Object** read_scene(char* filename) {
                 fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
                 exit(1);
               }
-              else{
-                objects[i]->sphere.radius = next_number(json);
-              }
+              r = 1;
+              objects[i]->sphere.radius = next_number(json);
+              
             }
 
             else if(strcmp(key, "color") == 0){
@@ -251,6 +278,7 @@ Object** read_scene(char* filename) {
                 fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
                 exit(1);
               }
+              col = 1;
               double* val = next_vector(json);
               if(objects[i]->kind == 1) {
                 objects[i]->sphere.color[0] = val[0];
@@ -271,6 +299,7 @@ Object** read_scene(char* filename) {
                 fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
                 exit(1);
               }
+              p = 1;
               double* value = next_vector(json);
               printf("%f\n",value[2] );
               if(objects[i]->kind == 1) {
@@ -289,6 +318,11 @@ Object** read_scene(char* filename) {
             }
 
             else if(strcmp(key, "normal") == 0){
+              if(objects[i]->kind != 2){
+                fprintf(stderr, "Error, type/key missmatch, line number %d \n", line);
+                exit(1);
+              }
+              n = 1;
               double* value = next_vector(json);
                 objects[i]->plane.normal[0] = value[0];
                 objects[i]->plane.normal[1] = value[1];
@@ -298,6 +332,7 @@ Object** read_scene(char* filename) {
             }
             else {
               fprintf(stderr, "Error: Unknown property, \"%s\", on line %d.\n",key, line);
+              exit(1);
             }
             skip_ws(json);
           }
@@ -308,6 +343,7 @@ Object** read_scene(char* filename) {
         }
         skip_ws(json);
         c = next_c(json);
+
         if (c == ',') {
           objects = realloc(objects, sizeof(*objects)*(i+2));
           printf("next\n" );

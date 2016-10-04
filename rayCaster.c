@@ -110,8 +110,6 @@ static inline double* sub(double* v1, double* v2){
      exit(1);
    }
 
-   FILE *outFile = fopen(outName, "wb");
-
    double *curcolor;
 
 

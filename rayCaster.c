@@ -197,7 +197,13 @@ static inline double dot(double* v1, double* v2){
    printf("%d\n", getSize());
    objects[getSize()] = NULL;
 
-   for (int i=0; objects[i] != 0; i += 1) printf("type: %d\n", objects[i]->kind);
+   if(objects[0]->kind != 0){
+     printf("Error: please provide a camera object\n");
+     exit(1);
+   }
+   if(objects[0]->camera.width > 0 && objects[0]->camera.height > 0){
+
+   }
 
 
    //Make sure the right number of arguments was supplied
@@ -214,39 +220,43 @@ static inline double dot(double* v1, double* v2){
    int height = 300;
    printf("%d\n", width);
 
+   //create and allociate space for the ppmimage
    PPMImage image;
    image.width = width;
    image.height = height;
-
    image.data = malloc(sizeof(RGBPix)* width * height);
 
-   static unsigned char backcolor[3];
-   backcolor[0] = 85;
-   backcolor[1] = 85;
-   backcolor[2] = 85;
-
-
+   static unsigned char backcolor[3] = {85, 85, 85};
 
    double cx = 0;
    double cy = 0;
-   double h = 1;
-   double w = 1;
+   double h;
+   double w;
+
+   if(objects[0]->kind != 0){
+     printf("Error: please provide a camera object\n");
+     exit(1);
+   }
+   if(objects[0]->camera.width > 0 && objects[0]->camera.height > 0){
+     w = objects[0]->camera.width;
+     h = objects[0]->camera.height;
+   }
+   else printf("Error: please provide a valid camera size\n");
 
    int M = height;
    int N = width;
 
    (void) fprintf(outFile, "P6\n%d %d\n255\n", N, M);
 
-   double pixheight = h / M;
-   double pixwidth = w / N;
-   for (int y = 0; y < M; y += 1) {
-     for (int x = 0; x < N; x += 1) {
+   double pixheight = h / height;
+   double pixwidth = w / width;
+   for (int y = 0; y < height; y += 1) {
+     for (int x = 0; x < width; x += 1) {
        double Ro[3] = {0, 0, 0};
-       // Rd = normalize(P - Ro)
        double Rd[3] = {
- 	cx - (w/2) + pixwidth * (x + 0.5),
- 	cy - (h/2) + pixheight * (y + 0.5),
- 	1
+ 	       cx - (w/2) + pixwidth * (x + 0.5),
+ 	       cy - (h/2) + pixheight * (y + 0.5),
+ 	       1
        };
       (void) normalize(Rd);
 

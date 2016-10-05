@@ -141,15 +141,12 @@ static inline double* sub(double* v1, double* v2){
    //First, get the camera object. Then set the view plane dimensions based on
    // the camera's width and height
    for (int i=0; objects[i] != NULL; i += 1){
-      if(objects[i]-> kind == 0){
+      if(objects[i]->kind == 0){
         if(objects[i]->camera.width > 0 && objects[i]->camera.height > 0){
           w = objects[i]->camera.width;
           h = objects[i]->camera.height;
         }
-        else {
-          printf("Error: please provide a valid camera size\n");
-          exit(1);
-        }
+
       }
    }
 

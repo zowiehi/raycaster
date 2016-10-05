@@ -371,7 +371,7 @@ Object** read_scene(char* filename) {
         //check to see if there are more objects to read
         if (c == ',') {
           //add more space to our array
-          objects = realloc(objects, sizeof(*objects)*(i+2));
+          objects = realloc(objects, sizeof(*objects)*(size+2));
           skip_ws(json);
           //increase index
           i += 1;

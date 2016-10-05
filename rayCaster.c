@@ -64,11 +64,13 @@ static inline double* sub(double* v1, double* v2){
              double b = (2 * (Ro[0] * Rd[0] - Rd[0] * C[0] + Ro[1] * Rd[1] - Rd[1] * C[1] + Ro[2] * Rd[2] - Rd[2] * C[2]));
              double c = sqr(Ro[0]) - 2*Ro[0]*C[0] + sqr(C[0]) + Ro[1] - 2*Ro[1]*C[1] + sqr(C[1]) + sqr(Ro[2]) - 2*Ro[2]*C[2] + sqr(C[2]) - sqr(r);
 
+             //using the quadratic formula
              double det = sqr(b) - 4 * a * c;
              if (det < 0) return -1;
 
              det = sqrt(det);
 
+             //only return the positive result
              double t0 = (-b - det) / (2*a);
              if (t0 > 0) return t0;
 
@@ -120,7 +122,7 @@ static inline double* sub(double* v1, double* v2){
    if(width < 1 || height < 1){
      printf("Please provide valid width and height values\n");
    }
-   printf("%d\n", width);
+
 
    //create and allociate space for the ppmimage
    PPMImage image;
@@ -197,7 +199,7 @@ static inline double* sub(double* v1, double* v2){
             t = plane_intersection(Ro, Rd, objects[i]->plane.position, objects[i]->plane.normal);
             break;
           default:
-            printf("err\n");
+            fprintf(stderr, "Error: unsupported object primative\n");
             exit(1);
         }
 
@@ -207,7 +209,7 @@ static inline double* sub(double* v1, double* v2){
           best_t = t;
           if(objects[i]-> kind == 1) curcolor = objects[i]->sphere.color;
           else if(objects[i]-> kind == 2) curcolor = objects[i]->plane.color;
-          else printf("Error: unknown primative type\n");
+          else fprintf(stderr, "Error: unknown primative type\n");
 
         }
       }
@@ -237,6 +239,7 @@ static inline double* sub(double* v1, double* v2){
  }
  //Write our data array to the image, then close it out
  fwrite(image.data, 3 * image.width, image.height, outFile);
+ //close our file
  (void) fclose(outFile);
 
  return 0;

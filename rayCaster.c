@@ -97,7 +97,7 @@ static inline double* sub(double* v1, double* v2){
 
    //Make sure the right number of arguments was supplied
    if(argc < 5 || argc > 5) {
-     fprintf(stderr, "usage: ./cast width height object-file.json output-file.ppm \n");
+     fprintf(stderr, "usage: ./raycast width height object-file.json output-file.ppm \n");
      exit(1);
    }
 
